@@ -1,0 +1,67 @@
+.loader3d {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  overflow: hidden;
+  background: #05020b;
+  opacity: 1;
+  visibility: visible;
+  transition:
+    opacity 800ms ease,
+    visibility 800ms ease;
+}
+
+.loader3d.is-hidden {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.loader3d canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.loader3d-caption {
+  position: absolute;
+  left: 50%;
+  bottom: 12%;
+  width: min(260px, 70vw);
+  transform: translateX(-50%);
+  color: #b9a3d4;
+  text-align: center;
+  font-size: 10px;
+  letter-spacing: 0.22em;
+}
+
+.loader3d-track {
+  height: 2px;
+  margin-top: 15px;
+  overflow: hidden;
+  background: rgba(166, 105, 218, 0.2);
+}
+
+.loader3d-track-fill {
+  width: 35%;
+  height: 100%;
+  background: linear-gradient(90deg, #783dff, #f04bff);
+  box-shadow: 0 0 10px #a855f7;
+  animation: loader3d-progress 1.6s ease-in-out infinite;
+}
+
+@keyframes loader3d-progress {
+  0% {
+    transform: translateX(-110%);
+  }
+  100% {
+    transform: translateX(310%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .loader3d-track-fill {
+    animation-duration: 3s;
+  }
+}

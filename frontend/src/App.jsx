@@ -1,4 +1,5 @@
 import { Canvas, useFrame } from "@react-three/fiber";
+import Loader3D from "./Loader3D";
 
 import {
   Environment,
@@ -6,6 +7,7 @@ import {
   Sparkles,
   Torus,
   useGLTF,
+  useProgress,
 } from "@react-three/drei";
 
 import {
@@ -18,6 +20,7 @@ import {
   useEffect,
   useMemo,
   useRef,
+  useState,
 } from "react";
 import {
   EdgesGeometry,
@@ -71,11 +74,7 @@ function DarkMatter() {
           args={[1.25, 1.25, 0.12, 96]}
         />
 
-        <meshStandardMaterial
-          color="#08050c"
-          roughness={0.22}
-          metalness={0.75}
-        />
+       <meshBasicMaterial color="#280d3e" />
       </mesh>
 
       {/* Inner dark-matter core */}
@@ -84,13 +83,7 @@ function DarkMatter() {
           args={[0.65, 48, 24]}
         />
 
-        <meshStandardMaterial
-          color="#12091a"
-          emissive="#3d1752"
-          emissiveIntensity={0.35}
-          roughness={0.18}
-          metalness={0.5}
-        />
+       <meshBasicMaterial color="#280d3e" />
       </mesh>
 
       {/* Dark matter particles */}
@@ -575,11 +568,7 @@ function Scene() {
       >
         <planeGeometry args={[40, 40]} />
 
-        <meshStandardMaterial
-          color="#280d3e"
-          roughness={0.72}
-          metalness={0.15}
-        />
+        <meshBasicMaterial color="#280d3e" />
       </mesh>
 
       <Suspense fallback={null}>
@@ -605,18 +594,51 @@ function Scene() {
 }
 
 
+
 function App() {
+  const [showForm, setShowForm] = useState(false);
+  const [amount, setAmount] = useState("150000");
+  const [sender, setSender] = useState("Account-A");
+  const [receiver, setReceiver] = useState("Account-B");
+  const [location, setLocation] = useState("Delhi");
+  const [result, setResult] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  async function checkTransaction(event) {
+    event.preventDefault();
+    setLoading(true);
+    setResult("");
+
+    try {
+      const response = await fetch("http://localhost:8080/api/fraud/check", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          amount: Number(amount),
+          sender,
+          receiver,
+          location,
+        }),
+      });
+
+      const text = await response.text();
+
+      if (!response.ok) {
+        setResult("Error: " + text);
+      } else {
+        setResult("Transaction result: " + text);
+      }
+    } catch (error) {
+      setResult("Could not connect to backend. Check that Spring Boot is running.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
   return (
     <main className="app">
-      <Canvas
-        camera={{
-          position: [0, 1.4, 15],
-          fov: 38,
-        }}
-        dpr={[1, 2]}
-      >
+      <Canvas camera={{ position: [0, 1.4, 15], fov: 38 }} dpr={[1, 2]}>
         <Scene />
-
         <EffectComposer>
           <Bloom
             intensity={1.35}
@@ -628,71 +650,84 @@ function App() {
       </Canvas>
 
       <section className="hero">
-        <div className="hero-label">
-          REAL-TIME FINANCIAL PROTECTION
-        </div>
-
+        <div className="hero-label">REAL-TIME FINANCIAL PROTECTION</div>
         <h1>
           FRAUD
           <br />
           <span>DETECTION</span>
         </h1>
-
         <p>
           AI-powered transaction intelligence designed
           to identify suspicious activity before it becomes
           a financial threat.
         </p>
-
-        <button className="launch-button">
-          OPEN COMMAND CENTER
+        <button
+          className="launch-button"
+          onClick={() => setShowForm(!showForm)}
+        >
+          {showForm ? "CLOSE COMMAND CENTER" : "OPEN COMMAND CENTER"}
           <span>↗</span>
         </button>
       </section>
 
-      <section className="metric-card metric-left">
-        <div className="metric-title">
-          RISK ENGINE
-        </div>
+      {showForm && (
+        <section
+          style={{
+            position: "absolute",
+            zIndex: 10,
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            width: "min(90%, 420px)",
+            padding: "24px",
+            border: "1px solid #9b4dcc",
+            borderRadius: "16px",
+            background: "rgba(18, 8, 29, 0.96)",
+            color: "white",
+            boxSizing: "border-box",
+          }}
+        >
+          <h2>Transaction Analysis</h2>
+          <form onSubmit={checkTransaction}>
+            <label>Amount</label>
+            <input required type="number" min="0.01" step="0.01"
+              value={amount} onChange={e => setAmount(e.target.value)}
+              style={inputStyle} />
 
-        <div className="metric-value">
-          08.4%
-        </div>
+            <label>Sender</label>
+            <input required value={sender}
+              onChange={e => setSender(e.target.value)} style={inputStyle} />
 
-        <div className="metric-status">
-          LOW RISK
-        </div>
+            <label>Receiver</label>
+            <input required value={receiver}
+              onChange={e => setReceiver(e.target.value)} style={inputStyle} />
 
-        <div className="progress">
-          <div className="progress-fill" />
-        </div>
+            <label>Location</label>
+            <input required value={location}
+              onChange={e => setLocation(e.target.value)} style={inputStyle} />
 
-        <div className="metric-footer">
-          <span>MODEL CONFIDENCE</span>
-          <strong>94.8%</strong>
-        </div>
-      </section>
-
-      <section className="metric-card metric-right">
-        <div className="metric-title">
-          TRANSACTION MONITOR
-        </div>
-
-        <div className="transaction-number">
-          1,284
-        </div>
-
-        <div className="transaction-label">
-          TRANSACTIONS ANALYZED
-        </div>
-
-        <div className="transaction-change">
-          <span>↑</span> 12.4% TODAY
-        </div>
-      </section>
+            <button className="launch-button" type="submit" disabled={loading}>
+              {loading ? "ANALYZING..." : "CHECK TRANSACTION"}
+            </button>
+          </form>
+          {result && <p role="status">{result}</p>}
+        </section>
+      )}
     </main>
   );
 }
+
+const inputStyle = {
+  display: "block",
+  width: "100%",
+  boxSizing: "border-box",
+  margin: "6px 0 14px",
+  padding: "10px",
+  borderRadius: "6px",
+  border: "1px solid #9b4dcc",
+  background: "#21132c",
+  color: "white",
+};
 
 
 useGLTF.preload(
